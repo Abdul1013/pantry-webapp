@@ -7,6 +7,11 @@ import {
   Modal,
   TextField,
   Button,
+  InputAdornment,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import {
   collection,
@@ -20,6 +25,7 @@ import {
 import { useEffect, useState } from "react";
 import { firestore } from "../../firebase";
 
+// Style for the modal
 const style = {
   position: "absolute",
   top: "50%",
@@ -35,8 +41,11 @@ const style = {
   gap: 3,
 };
 
+// Main component
 export default function Home() {
+  // State variables
   const [inventory, setInventory] = useState([]);
+  const [filteredInventory, setFilteredInventory] = useState([]);
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [itemName, setItemName] = useState("");
@@ -45,8 +54,10 @@ export default function Home() {
   const [itemPrice, setItemPrice] = useState("");
   const [itemSupplier, setItemSupplier] = useState("");
   const [currentItem, setCurrentItem] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("");
 
-  // Get Data From Inventory
+  // Fetch inventory data from Firestore
   const updateInventory = async () => {
     try {
       const snapshot = await getDocs(collection(firestore, "inventory"));
@@ -61,11 +72,28 @@ export default function Home() {
     }
   };
 
+  // Fetch inventory data on component mount
   useEffect(() => {
     updateInventory();
   }, []);
 
-  // Add Item to db
+  // Filter inventory based on search term and filter type
+  useEffect(() => {
+    let filtered = inventory;
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (item) =>
+          item.name &&
+          item.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    if (filterType) {
+      filtered = filtered.filter((item) => item.type === filterType);
+    }
+    setFilteredInventory(filtered);
+  }, [searchTerm, filterType, inventory]);
+
+  // Add new item to Firestore
   const addItem = async () => {
     const docRef = doc(collection(firestore, "inventory"), itemName);
     try {
@@ -83,7 +111,7 @@ export default function Home() {
     }
   };
 
-  // Delete Item from db
+  // Remove item from Firestore
   const removeItem = async (item) => {
     const docRef = doc(collection(firestore, "inventory"), item.id);
     try {
@@ -102,7 +130,7 @@ export default function Home() {
     }
   };
 
-  // Edit Item in db
+  // Edit item in Firestore
   const editItem = async () => {
     const docRef = doc(collection(firestore, "inventory"), currentItem.id);
     try {
@@ -120,6 +148,20 @@ export default function Home() {
     }
   };
 
+  // Function to clear all inventory items
+  const clearInventory = async () => {
+    try {
+      const snapshot = await getDocs(collection(firestore, "inventory"));
+      const deletePromises = snapshot.docs.map((doc) => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+      await updateInventory(); // Refresh the local state
+      console.log("Inventory cleared successfully.");
+    } catch (error) {
+      console.error("Error clearing inventory: ", error);
+    }
+  };
+
+  // Open and close modal functions for editing items
   const handleEditOpen = (item) => {
     setCurrentItem(item);
     setItemName(item.name || "");
@@ -131,13 +173,14 @@ export default function Home() {
   };
   const handleEditClose = () => setEditOpen(false);
 
+  // Open and close modal functions for adding items
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
 
   return (
     <Box
       width="100vw"
-      height="100vh"
+      height="100%"
       display="flex"
       justifyContent="center"
       alignItems="center"
@@ -145,6 +188,7 @@ export default function Home() {
       gap={2}
       bgcolor={"#F6F4EB"}
     >
+      {/* Modal for adding new items */}
       <Modal
         open={open}
         onClose={handleClose}
@@ -203,6 +247,7 @@ export default function Home() {
         </Box>
       </Modal>
 
+      {/* Modal for editing items */}
       <Modal
         open={editOpen}
         onClose={handleEditClose}
@@ -260,14 +305,54 @@ export default function Home() {
           </Stack>
         </Box>
       </Modal>
+
+      {/* Inventory dashboard display */}
       <Typography variant="h2" color="#4682A9" textAlign="center">
         Inventory
       </Typography>
 
-      <Box border={"1px solid #F4A460"} width={"90%"} bgcolor="#749BC2">
+      <Box
+        border={"1px solid #F4A460"}
+        width={"90%"}
+        height={"100%"}
+        bgcolor="#749BC2"
+        marginBottom={"10px"}
+      >
         <Typography variant="h4" color="#4682A9" textAlign="center">
           Inventory list
         </Typography>
+
+        <Box width="800px" mb={2} marginLeft={5}>
+          <Stack direction="row" spacing={2} mb={2}>
+            {/* Search input field */}
+            <TextField
+              label="Search"
+              variant="outlined"
+              fullWidth
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">🔍</InputAdornment>
+                ),
+              }}
+            />
+            {/* Filter dropdown */}
+            <FormControl variant="outlined" fullWidth>
+              <InputLabel>Filter</InputLabel>
+              <Select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value)}
+                label="Filter"
+              >
+                <MenuItem value="">None</MenuItem>
+                <MenuItem value="name">Name</MenuItem>
+                <MenuItem value="quantity">Quantity</MenuItem>
+                {/* Add more filter options as needed */}
+              </Select>
+            </FormControl>
+          </Stack>
+        </Box>
 
         <Box
           width="100%"
@@ -279,41 +364,72 @@ export default function Home() {
           paddingX={5}
           spacing={2}
         >
+          {/* Table headers */}
           <Typography
             variant="h6"
             color="#333"
             textAlign="center"
-            // fontWeight="bold"
+            style={{ flex: 1 }}
           >
             Name
           </Typography>
-
-          <Typography variant={"h6"} color={"#333"} textAlign={"center"}>
+          <Typography
+            variant="h6"
+            color="#333"
+            textAlign="center"
+            style={{ flex: 1 }}
+          >
             Quantity
           </Typography>
-          <Typography variant={"h6"} color={"#333"} textAlign={"center"}>
+          <Typography
+            variant="h6"
+            color="#333"
+            textAlign="center"
+            style={{ flex: 1 }}
+          >
             Description
           </Typography>
-          <Typography variant={"h6"} color={"#333"} textAlign={"center"}>
+          <Typography
+            variant="h6"
+            color="#333"
+            textAlign="center"
+            style={{ flex: 1 }}
+          >
             Price
           </Typography>
-          <Typography variant={"h6"} color={"#333"} textAlign={"center"}>
+          <Typography
+            variant="h6"
+            color="#333"
+            textAlign="center"
+            style={{ flex: 1 }}
+          >
             Supplier
           </Typography>
-          <Typography variant={"h6"} color={"#333"} textAlign={"center"}>
+          <Typography
+            variant="h6"
+            color="#333"
+            textAlign="center"
+            style={{ flex: 1 }}
+          >
             Edit
           </Typography>
-          <Typography variant={"h6"} color={"#333"} textAlign={"center"}>
+          <Typography
+            variant="h6"
+            color="#333"
+            textAlign="center"
+            style={{ flex: 1 }}
+          >
             Delete
           </Typography>
         </Box>
-        {/* display user input section */}
+
+        {/* Display inventory items */}
         <Stack
           width="100%"
           height="400px"
           spacing={2}
           overflow="auto"
-          direction={"column"}
+          direction="column"
         >
           {inventory.map((item) => (
             <Box
@@ -323,45 +439,90 @@ export default function Home() {
               display="flex"
               justifyContent="space-between"
               alignItems="center"
-              bgcolor=""
               paddingX={5}
-              // sx={{ borderRight: "4px solid #f0f0f0" }}
+              sx={{ borderBottom: "1px solid #f0f0f0" }}
             >
+
+              {/* Display item details */}
               <Typography
                 variant="h6"
                 color="#333"
                 textAlign="center"
                 fontWeight="bold"
+                style={{ flex: 1 }}
               >
                 {item.name
                   ? item.name.charAt(0).toUpperCase() + item.name.slice(1)
                   : "Unnamed Item"}
               </Typography>
-
-              <Typography variant={"h6"} color={"#333"} textAlign={"center"}>
+              <Typography
+                variant="h6"
+                color="#333"
+                textAlign="center"
+                style={{ flex: 1 }}
+              >
                 {item.quantity}
               </Typography>
-              <Typography variant={"h6"} color={"#333"} textAlign={"center"}>
+              <Typography
+                variant="h6"
+                color="#333"
+                textAlign="center"
+                style={{ flex: 1 }}
+              >
                 {item.description}
               </Typography>
-              <Typography variant={"h6"} color={"#333"} textAlign={"center"}>
+              <Typography
+                variant="h6"
+                color="#333"
+                textAlign="center"
+                style={{ flex: 1 }}
+              >
                 {item.price}
               </Typography>
-              <Typography variant={"h6"} color={"#333"} textAlign={"center"}>
+              <Typography
+                variant="h6"
+                color="#333"
+                textAlign="center"
+                style={{ flex: 1 }}
+              >
                 {item.supplier}
               </Typography>
-              <Button variant="contained" onClick={() => handleEditOpen(item)}>
+              <Button
+                variant="contained"
+                onClick={() => handleEditOpen(item)}
+                style={{ flex: 1, marginRight: 5 }}
+              >
                 Edit
               </Button>
-              <Button variant="contained" onClick={() => removeItem(item)}>
+              <Button
+                variant="contained"
+                onClick={() => removeItem(item)}
+                style={{ flex: 1 }}
+              >
                 Remove
               </Button>
             </Box>
           ))}
         </Stack>
-        <Button variant="contained" onClick={handleOpen}>
-          Add New Item
-        </Button>
+
+        <Box
+          display="flex"
+          justifyContent="center"
+          // paddingX={5}
+          marginBottom={"10px"}
+          // alignItems="center"
+          // marginX={5}
+        >
+          {/* Add new item button */}
+          <Button
+            variant="contained"
+            onClick={handleOpen}
+            style={{ marginRight: 2 }}
+          >
+            Add New Item
+          </Button>
+          <Button variant="contained" onClick={clearInventory}>Clear Inventory</Button>
+        </Box>
       </Box>
     </Box>
   );
