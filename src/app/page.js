@@ -40,6 +40,7 @@ const style = {
   flexDirection: "column",
   gap: 3,
 };
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 // Main component
 export default function Home() {
@@ -93,7 +94,7 @@ export default function Home() {
     setFilteredInventory(filtered);
   }, [searchTerm, filterType, inventory]);
 
-  // Add new item to Firestore
+  // Add new item
   const addItem = async () => {
     const docRef = doc(collection(firestore, "inventory"), itemName);
     try {
@@ -111,26 +112,19 @@ export default function Home() {
     }
   };
 
-  // Remove item from Firestore
-  const removeItem = async (item) => {
-    const docRef = doc(collection(firestore, "inventory"), item.id);
+  // Remove item
+  const removeItem = async (itemId) => {
+    const docRef = doc(firestore, "inventory", itemId); 
     try {
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        const { quantity } = docSnap.data();
-        if (quantity === 1) {
-          await deleteDoc(docRef);
-        } else {
-          await updateDoc(docRef, { quantity: quantity - 1 });
-        }
-      }
-      await updateInventory();
+      await deleteDoc(docRef);
+      console.log(`Item with ID '${itemId}' has been successfully deleted.`);
+      await updateInventory(); 
     } catch (error) {
       console.error("Error removing item: ", error);
     }
   };
 
-  // Edit item in Firestore
+  // Edit item
   const editItem = async () => {
     const docRef = doc(collection(firestore, "inventory"), currentItem.id);
     try {
@@ -311,6 +305,59 @@ export default function Home() {
         Inventory
       </Typography>
 
+      {/* MenuItem */}
+      <Box
+        display="flex"
+        flexDirection="column"
+        marginBottom={"10px"}
+        width="90%"
+        mb={2}
+        marginLeft={5}
+      >
+        <Stack direction="row" spacing={2} mb={2} width="100%">
+          {/* Search input field */}
+          <TextField
+            label="Search"
+            variant="outlined"
+            fullWidth
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">🔍</InputAdornment>
+              ),
+            }}
+          />
+          {/* Filter dropdown */}
+          <FormControl variant="outlined" fullWidth>
+            <InputLabel>Filter</InputLabel>
+            <Select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              label="Filter"
+            >
+              <MenuItem value="">None</MenuItem>
+              <MenuItem value="name">Name</MenuItem>
+              <MenuItem value="quantity">Quantity</MenuItem>
+              {/* Add more filter options as needed */}
+            </Select>
+          </FormControl>
+
+          <Box display="flex" width="100%">
+            <Button
+              variant="contained"
+              onClick={handleOpen}
+              style={{ marginRight: 8 }} // Adjust margin as needed
+            >
+              Add New Item
+            </Button>
+            <Button variant="contained" onClick={clearInventory}>
+              Clear Inventory
+            </Button>
+          </Box>
+        </Stack>
+      </Box>
+
       <Box
         border={"5px solid #333"}
         width={"90%"}
@@ -321,38 +368,6 @@ export default function Home() {
         {/* <Typography variant="h4" color="#4682A9" textAlign="center">
           Inventory list
         </Typography> */}
-
-        <Box width="800px" mb={2} marginLeft={5} marginTop={5}>
-          <Stack direction="row" spacing={2} mb={2}>
-            {/* Search input field */}
-            <TextField
-              label="Search"
-              variant="outlined"
-              fullWidth
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">🔍</InputAdornment>
-                ),
-              }}
-            />
-            {/* Filter dropdown */}
-            <FormControl variant="outlined" fullWidth>
-              <InputLabel>Filter</InputLabel>
-              <Select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-                label="Filter"
-              >
-                <MenuItem value="">None</MenuItem>
-                <MenuItem value="name">Name</MenuItem>
-                <MenuItem value="quantity">Quantity</MenuItem>
-                {/* Add more filter options as needed */}
-              </Select>
-            </FormControl>
-          </Stack>
-        </Box>
 
         <Box
           width="100%"
@@ -439,7 +454,10 @@ export default function Home() {
               display="flex"
               alignItems="center"
               paddingX={5}
-              sx={{ borderBottom: "1px solid #333",borderRight: "1px solid #333" }}
+              sx={{
+                borderBottom: "1px solid #333",
+                borderRight: "1px solid #333",
+              }}
             >
               {/* Display item details */}
               <Typography
@@ -494,34 +512,14 @@ export default function Home() {
               </Button>
               <Button
                 variant="contained"
-                onClick={() => removeItem(item)}
-                style={{ flex: 1, marginLeft: 25, marginRight: -20}}
+                onClick={() => removeItem(item.id)}
+                style={{ flex: 1, marginLeft: 25, marginRight: -20 }}
               >
                 Remove
               </Button>
             </Box>
           ))}
         </Stack>
-      </Box>
-      <Box
-        display="flex"
-        justifyContent="center"
-        // paddingX={5}
-        marginBottom={"10px"}
-        // alignItems="center"
-        // marginX={5}
-      >
-        {/* Add new item button */}
-        <Button
-          variant="contained"
-          onClick={handleOpen}
-          style={{ marginRight: 2 }}
-        >
-          Add New Item
-        </Button>
-        <Button variant="contained" onClick={clearInventory}>
-          Clear Inventory
-        </Button>
       </Box>
     </Box>
   );
