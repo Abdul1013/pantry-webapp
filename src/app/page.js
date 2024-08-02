@@ -312,17 +312,17 @@ export default function Home() {
       </Typography>
 
       <Box
-        border={"1px solid #F4A460"}
+        border={"5px solid #333"}
         width={"90%"}
         height={"100%"}
-        bgcolor="#749BC2"
+        bgcolor="#f0f0f0"
         marginBottom={"10px"}
       >
-        <Typography variant="h4" color="#4682A9" textAlign="center">
+        {/* <Typography variant="h4" color="#4682A9" textAlign="center">
           Inventory list
-        </Typography>
+        </Typography> */}
 
-        <Box width="800px" mb={2} marginLeft={5}>
+        <Box width="800px" mb={2} marginLeft={5} marginTop={5}>
           <Stack direction="row" spacing={2} mb={2}>
             {/* Search input field */}
             <TextField
@@ -356,8 +356,8 @@ export default function Home() {
 
         <Box
           width="100%"
-          height="100px"
-          bgcolor="#749BC2"
+          height="50px"
+          bgcolor="#f0f0f0"
           display="flex"
           justifyContent="space-between"
           alignItems="center"
@@ -437,12 +437,10 @@ export default function Home() {
               width="100%"
               height="50px"
               display="flex"
-              justifyContent="space-between"
               alignItems="center"
               paddingX={5}
-              sx={{ borderBottom: "1px solid #f0f0f0" }}
+              sx={{ borderBottom: "1px solid #333",borderRight: "1px solid #333" }}
             >
-
               {/* Display item details */}
               <Typography
                 variant="h6"
@@ -482,7 +480,7 @@ export default function Home() {
               <Typography
                 variant="h6"
                 color="#333"
-                textAlign="center"
+                textAlign="left"
                 style={{ flex: 1 }}
               >
                 {item.supplier}
@@ -490,39 +488,40 @@ export default function Home() {
               <Button
                 variant="contained"
                 onClick={() => handleEditOpen(item)}
-                style={{ flex: 1, marginRight: 5 }}
+                // style={{ flex: 1, marginRight: 5 }}
               >
                 Edit
               </Button>
               <Button
                 variant="contained"
                 onClick={() => removeItem(item)}
-                style={{ flex: 1 }}
+                style={{ flex: 1, marginLeft: 25, marginRight: -20}}
               >
                 Remove
               </Button>
             </Box>
           ))}
         </Stack>
-
-        <Box
-          display="flex"
-          justifyContent="center"
-          // paddingX={5}
-          marginBottom={"10px"}
-          // alignItems="center"
-          // marginX={5}
+      </Box>
+      <Box
+        display="flex"
+        justifyContent="center"
+        // paddingX={5}
+        marginBottom={"10px"}
+        // alignItems="center"
+        // marginX={5}
+      >
+        {/* Add new item button */}
+        <Button
+          variant="contained"
+          onClick={handleOpen}
+          style={{ marginRight: 2 }}
         >
-          {/* Add new item button */}
-          <Button
-            variant="contained"
-            onClick={handleOpen}
-            style={{ marginRight: 2 }}
-          >
-            Add New Item
-          </Button>
-          <Button variant="contained" onClick={clearInventory}>Clear Inventory</Button>
-        </Box>
+          Add New Item
+        </Button>
+        <Button variant="contained" onClick={clearInventory}>
+          Clear Inventory
+        </Button>
       </Box>
     </Box>
   );
